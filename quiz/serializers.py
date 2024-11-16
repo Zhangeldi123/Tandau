@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from quiz import models as model_file
+from . import models as model_file
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(style={'input_type':'password'})
@@ -25,3 +25,14 @@ class UserLoginSerializer(serializers.ModelSerializer):
     class Meta:
         model = model_file.Users
         fields = ['email','password']
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = model_file.Question_Category
+        fields = '__all__'
+
+class QuestionListSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.name',read_only=True)
+    class Meta:
+        model = model_file.Questions
+        fields = ['id','text','difficulty','category_name']
