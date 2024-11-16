@@ -1,9 +1,11 @@
 from django.contrib.auth import authenticate
+from django.core.serializers import serialize
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status,permissions
 from .serializers import UserRegistrationSerializer, UserLoginSerializer
+from . import models,serializers
 
 def get_tokens(user):
     refresh_token = RefreshToken.for_user(user)
@@ -43,3 +45,14 @@ class LoginView(APIView):
                     'errors':'email or password is incorrect'
                 },status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class QuestionListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self,request):
+        valid_questions =  models.Questions.objects.filter(is_active=True)
+        serializer = serializers.QuestionListSerializer(valid_questions, many=True)
+
+        return Response({
+            'count':valid_questions.count(),
+            'data':serializer.data
+        },status=status.HTTP_200_OK)

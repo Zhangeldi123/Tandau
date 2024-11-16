@@ -56,3 +56,29 @@ class Users(AbstractBaseUser):
     @property
     def is_staff(self):
         return self.is_admin
+
+class Question_Category(models.Model):
+    name = models.CharField(max_length=80)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class Questions(models.Model):
+    difficulty_choice = [
+        ('easy','Easy'),
+        ('medium','Medium'),
+        ('hard','Hard'),
+    ]
+
+    category = models.ForeignKey(Question_Category, on_delete=models.CASCADE)
+    text = models.TextField()
+    difficulty = models.CharField(max_length=15, choices=difficulty_choice, default='easy')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.text[:40]
+
+
