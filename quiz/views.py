@@ -47,6 +47,9 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class QuestionListView(APIView):
+    """
+    Returns all the questions list in a get method
+    """
     permission_classes = [permissions.IsAuthenticated]
     def get(self,request):
         valid_questions =  models.Questions.objects.filter(is_active=True)
@@ -56,3 +59,53 @@ class QuestionListView(APIView):
             'count':valid_questions.count(),
             'data':serializer.data
         },status=status.HTTP_200_OK)
+
+class QuestionDetailView(APIView):
+    """
+    Returns a question details with get method
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self,request,pk):
+        try:
+            question = models.Questions.objects.get(pk=pk,is_active=True)
+            serializer = serializers.QuestionDetailSerializer(question)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        except models.Questions.DoesNotExist:
+            return Response(
+            {'error':'Question not found'},status=status.HTTP_404_NOT_FOUND
+            )
+
+class SubmitAnswerView(APIView):
+    """
+    User answer submission, Validate answer correctness, save submitted answer
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = serializers.AnswerSubmissionSerializer(data=request.data)
+        print(serializer)
+
+        if serializer.is_valid():
+            # Check user has submitted the answer previously
+            question = serializer.validated_data['question']
+            selected_answer = serializer.validated_data['selected_answer']
+
+            if models.UserSolutions.objects.filter(user=request.user,question=question).exists():
+                return Response(
+                {"error": "You have already answered this question."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Check the submitted answer is correct or not
+            is_correct = selected_answer.is_correct
+            serializer.save(user=request.user,is_correct=is_correct)
+
+            return Response(
+                {
+                    'msg':'Solution submitted successfully.',
+                    'is_correct':is_correct,
+                },status=status.HTTP_201_CREATED,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
