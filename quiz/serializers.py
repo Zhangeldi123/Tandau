@@ -36,3 +36,29 @@ class QuestionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = model_file.Questions
         fields = ['id','text','difficulty','category_name']
+
+class ChoicesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = model_file.Questions
+        fields = ['id','text']  # is_correct(solution) is excluded to prevent cheating
+
+class QuestionDetailSerializer(serializers.ModelSerializer):
+    choice = ChoicesSerializer(many=True,read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
+
+    class Meta:
+        model = model_file.Questions
+        fields = ['id','text','difficulty','category_name','choice']
+
+class AnswerSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = model_file.UserSolutions
+        fields = ['question','selected_answer']
+
+    def validate(self, attrs):
+        question = attrs['question']
+        selected_answer = attrs['selected_answer']
+
+        if selected_answer.question.id != question.id:
+            raise serializers.ValidationError("Your selected answer is not related to this question")
+        return attrs
