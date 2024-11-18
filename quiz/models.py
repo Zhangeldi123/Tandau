@@ -1,4 +1,6 @@
 from django.db import models
+from django.conf import settings
+
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 
 class UserManager(BaseUserManager):
@@ -81,4 +83,19 @@ class Questions(models.Model):
     def __str__(self):
         return self.text[:40]
 
+class Choices(models.Model):
+    question = models.ForeignKey(Questions,on_delete=models.CASCADE, db_column='question_id')
+    solution = models.TextField(max_length=200)
+    is_correct = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.solution
+
+class UserSolutions(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    question = models.ForeignKey(Questions,on_delete=models.CASCADE)
+    selected_answer = models.ForeignKey(Choices,on_delete=models.CASCADE)
+    is_correct = models.BooleanField(default=False)
+    answered_at = models.DateTimeField(auto_now_add=True)
 
