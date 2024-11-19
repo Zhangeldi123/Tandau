@@ -109,3 +109,14 @@ class SubmitAnswerView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UserPracticeHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self,request):
+        history = models.UserSolutions.objects.filter(user=request.user).order_by('-answered_at')
+        serializer = serializers.UserHistorySerializer(history, many=True)
+
+        return Response({
+            'Num of Questions tried':history.count(),
+            'question data':serializer.data
+        },status=status.HTTP_200_OK)
