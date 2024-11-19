@@ -31,24 +31,26 @@ class CategorySerializer(serializers.ModelSerializer):
         model = model_file.Question_Category
         fields = '__all__'
 
-class QuestionListSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name',read_only=True)
-    class Meta:
-        model = model_file.Questions
-        fields = ['id','text','difficulty','category_name']
-
 class ChoicesSerializer(serializers.ModelSerializer):
     class Meta:
         model = model_file.Choices
-        fields = ['id','text']  # is_correct (solution) is excluded (not showing) to prevent cheating
+        fields = ['id','solution']  # is_correct (solution) is excluded (not showing) to prevent cheating
 
-class QuestionDetailSerializer(serializers.ModelSerializer):
-    choice = ChoicesSerializer(many=True,read_only=True)
+class QuestionListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    options = ChoicesSerializer(source='choices_set', many=True, read_only=True)
 
     class Meta:
         model = model_file.Questions
-        fields = ['id','text','difficulty','category_name','choice']
+        fields = ['id', 'text', 'difficulty','category_name','options']
+
+class QuestionDetailSerializer(serializers.ModelSerializer):
+    options = ChoicesSerializer(source='choices_set',many=True, read_only=True)
+    category_name = serializers.CharField(source='category.name',read_only=True)
+
+    class Meta:
+        model = model_file.Questions
+        fields = ['id','text','difficulty','category_name','options']
 
 class AnswerSubmissionSerializer(serializers.ModelSerializer):
     class Meta:

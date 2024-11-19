@@ -56,8 +56,8 @@ class QuestionListView(APIView):
         serializer = serializers.QuestionListSerializer(valid_questions, many=True)
 
         return Response({
-            'count':valid_questions.count(),
-            'data':serializer.data
+            'Total num. of Questions':valid_questions.count(),
+            'All questions':serializer.data
         },status=status.HTTP_200_OK)
 
 class QuestionDetailView(APIView):
@@ -113,10 +113,12 @@ class SubmitAnswerView(APIView):
 class UserPracticeHistoryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self,request):
-        history = models.UserSolutions.objects.filter(user=request.user).order_by('-answered_at')
+        history = models.UserSolutions.objects.filter(user=request.user).distinct('question')
+        no_correct_answers = history.filter(is_correct=True).count()
         serializer = serializers.UserHistorySerializer(history, many=True)
-
+        # correct_answered =
         return Response({
-            'Num of Questions tried':history.count(),
+            'Num of questions attempted':history.count(),
+            'no_correct_answers':no_correct_answers,
             'question data':serializer.data
         },status=status.HTTP_200_OK)
