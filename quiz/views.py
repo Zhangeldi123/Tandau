@@ -1,11 +1,26 @@
 from django.contrib.auth import authenticate
-from django.core.serializers import serialize
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework import status,permissions
 from .serializers import UserRegistrationSerializer, UserLoginSerializer
 from . import models,serializers
+
+class HomeView(APIView):
+    """
+    Home view for the root URL
+    """
+    def get(self, request):
+        return Response({
+            "msg": "This is QuizBit, a MCQ Simulation API!",
+            "endpoints":{
+                "register":"/api/register/",
+                "login":"/api/login/",
+                "question lists":"/api/questionlist/",
+                "question detail": "/api/question-detail/<int:pk>/",
+                "submit answer": "/api/submit-answer/",
+                "user histories": "/api/user_history/" }
+        })
 
 def get_tokens(user):
     refresh_token = RefreshToken.for_user(user)
