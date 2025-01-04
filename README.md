@@ -20,7 +20,7 @@ The API used PostgreSQL as the database and Django Simple JWT for authentication
 
 ## ⚠️ NB:  
 - 🚧 **The main branch is in initial stage. More advanced features are being added in branch** [version_2](https://github.com/YeakubSadlil/quizbit/tree/version_2)
-- 🗂️ **All project tracking and plans are in the** [Project Tab](https://github.com/users/YeakubSadlil/projects/3)
+- 🗂️ **All project tracking and plans are in the [Project Tab](https://github.com/users/YeakubSadlil/projects/3) and progress in [MileStones](https://github.com/YeakubSadlil/quizbit/milestones)**
   
 ## Features
 
