@@ -28,13 +28,13 @@ The API used PostgreSQL as the database and Django Simple JWT for authentication
 - User Registration with password confirmation
 - User Login with email and password
 2. Question Retrieval
-- Retrieve a specific question from the database
-- Retrive a list of questions from the database
-3. Anwser Submission
+- Retrieve a specific question with its multiple choice options from the database
+- Retrieve a list of questions with every question multiple choice options from the database
+3. Answer Submission
 - Submit an answer to a question
 - Validate the answer and check the result
 4. User Submission History
-- Retrieve a list of user submission history, attempt number, accuracy (score) and time taken
+- Retrieve a list of user submission history
 
 ## Prerequisites
 - Python 3.8
@@ -68,7 +68,7 @@ python manage.py runserver
 
 ## Database Models
 1. **Users:** Custom user model with email as the unique identifier
-2. **Question_Category:** Category of each question like Math,Physics,Chemistry etc.
+2. **Question_Category:** Category of each question like Math, Physics, Chemistry etc.
 3. **Questions:** MCQ question with description, difficulty level, correctness and category
 4. **Choices:** Multiple options for each question is stored with the correct answer
 5. **UserSolution:** Stores user submission history with his answer and time taken
