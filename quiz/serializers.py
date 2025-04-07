@@ -30,7 +30,7 @@ class TestSerializer(serializers.ModelSerializer):
                   'is_active', 'questions_count']
         read_only_fields = ['creator', 'created_at', 'updated_at']
 
-    def get_questions_count(self, obj):
+    def get_questions_count(self, obj) -> int:
         return obj.questions.count()
 
     def create(self, validated_data):
@@ -122,7 +122,7 @@ class CompetitiveSessionSerializer(serializers.ModelSerializer):
                   'ended_at', 'is_active', 'participants_count']
         read_only_fields = ['id', 'created_by', 'created_at']
 
-    def get_participants_count(self, obj):
+    def get_participants_count(self, obj) -> int:
         if obj.started_at and obj.ended_at:
             return obj.get_participants().count()
         return 0

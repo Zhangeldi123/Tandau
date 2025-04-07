@@ -3,10 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
-import openai
 import os
 import random
-
+from openai import OpenAI
 from .models import (
     Test, Question, Answer, TestSession,
     UserResponse, CompetitiveSession
@@ -123,22 +122,23 @@ class TestViewSet(viewsets.ModelViewSet):
             # Get the topic from the test title and description
             topic = f"{test.title}. {test.description}"
 
-            # Generate questions using ChatGPT
-            openai.api_key = api_key
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+            client = OpenAI(
+                api_key="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",
+                base_url="https://openrouter.ai/api/v1"
+            )
+
+            response = client.chat.completions.create(
+                model="openai/gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that generates quiz questions."},
                     {"role": "user", "content": f"Generate 20 multiple-choice questions about {topic}. "
                                                 f"For each question, provide 4 options and indicate the correct answer. "
                                                 f"Format as JSON with structure: "
-                                                f"[{{\"question\": \"...\", \"options\": [\"A\", \"B\", \"C\", \"D\"], \"correct\": \"A\"}}]"
-                                                f"Return only the JSON array."
-                     }
+                                                f"[{{\"question\": \"...\", \"options\": [\"A\", \"B\", \"C\", \"D\"], \"correct\": \"A\"}}] "
+                                                f"Return only the JSON array."}
                 ]
             )
 
-            # Parse the generated questions
             generated_content = response.choices[0].message.content
             import json
             try:

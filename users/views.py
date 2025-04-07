@@ -1,19 +1,78 @@
-from django.shortcuts import render
-
-# Create your views here.
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+
+
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth.models import User
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from .models import UserProfile, Achievement, UserAchievement, FriendRequest
 from .serializers import (
     UserSerializer, UserProfileSerializer, AchievementSerializer,
-    UserAchievementSerializer, FriendRequestSerializer, FriendSerializer
+    UserAchievementSerializer, FriendRequestSerializer, FriendSerializer,
+    SignupSerializer  # We'll create this serializer
 )
+from drf_spectacular.utils import extend_schema
+
+@extend_schema(
+    summary="Register a new user",
+    description="Creates a new user account with the provided information and returns an authentication token.",
+    request=SignupSerializer,
+    responses={201: UserProfileSerializer},  # or a custom response serializer
+    tags=["auth"]
+)
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def signup(request):
+    serializer = SignupSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        token, created = Token.objects.get_or_create(user=user)
+
+        # Get user profile data
+        profile_serializer = UserProfileSerializer(user.profile)
+
+        return Response({
+            'token': token.key,
+            'user_id': user.pk,
+            'username': user.username,
+            'email': user.email,
+            'profile': profile_serializer.data
+        }, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Get authentication token",
+    description="Returns an authentication token for the provided username and password.",
+    tags=["auth"]
+)
+class CustomAuthToken(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+
+        # Get user profile data
+        profile_serializer = UserProfileSerializer(user.profile)
+
+        return Response({
+            'token': token.key,
+            'user_id': user.pk,
+            'username': user.username,
+            'email': user.email,
+            'profile': profile_serializer.data
+        })
 
 
 class CustomAuthToken(ObtainAuthToken):

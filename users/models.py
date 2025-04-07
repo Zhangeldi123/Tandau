@@ -1,7 +1,4 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -10,14 +7,14 @@ from django.dispatch import receiver
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     bio = models.TextField(blank=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
-    friends = models.ManyToManyField('self', blank=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     rating = models.IntegerField(default=0)
     tests_taken = models.IntegerField(default=0)
     tests_created = models.IntegerField(default=0)
+    friends = models.ManyToManyField('self', blank=True, symmetrical=True)
 
     def __str__(self):
-        return f"{self.user.username}'s profile"
+        return self.user.username
 
     def update_rating(self):
         """Update user rating based on test performance"""
@@ -26,34 +23,39 @@ class UserProfile(models.Model):
         # Get all completed test sessions
         sessions = TestSession.objects.filter(user=self.user, status='completed')
 
-        if not sessions.exists():
-            return 0
+        if sessions.count() > 0:
+            # Calculate average score percentage
+            total_score = 0
+            total_possible = 0
 
-        # Calculate average score percentage
-        total_percentage = 0
-        for session in sessions:
-            if session.score is not None:
-                total_questions = session.test.questions.count()
-                if total_questions > 0:
-                    score_percentage = (session.score / total_questions) * 100
-                    total_percentage += score_percentage
+            for session in sessions:
+                score = session.calculate_score()
+                total_score += score
+                total_possible += sum(q.points for q in session.test.questions.all())
 
-        avg_percentage = total_percentage / sessions.count()
+            if total_possible > 0:
+                # Rating is percentage of correct answers * 10
+                self.rating = int((total_score / total_possible) * 1000)
+                self.save()
 
-        # Factor in number of tests taken
-        tests_factor = min(sessions.count() / 10, 1)  # Max out at 10 tests
 
-        # Calculate rating (max 1000)
-        self.rating = int(avg_percentage * 10 * tests_factor)
-        self.save()
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Create a UserProfile when a User is created"""
+    if created:
+        UserProfile.objects.create(user=instance)
 
-        return self.rating
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Save the UserProfile when the User is saved"""
+    instance.profile.save()
 
 
 class Achievement(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    icon = models.CharField(max_length=50, blank=True)  # CSS class or icon name
+    icon = models.ImageField(upload_to='achievements/', blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -88,20 +90,19 @@ class FriendRequest(models.Model):
         unique_together = ('from_user', 'to_user')
 
     def __str__(self):
-        return f"{self.from_user.username} -> {self.to_user.username}: {self.status}"
+        return f"{self.from_user.username} -> {self.to_user.username} ({self.status})"
 
     def accept(self):
-        """Accept the friend request and add users as friends"""
+        """Accept the friend request and add both users as friends"""
         if self.status == 'pending':
             self.status = 'accepted'
             self.save()
 
-            # Add users as friends
+            # Add both users as friends
             from_profile = self.from_user.profile
             to_profile = self.to_user.profile
 
             from_profile.friends.add(to_profile)
-            to_profile.friends.add(from_profile)
 
             return True
         return False
@@ -113,16 +114,3 @@ class FriendRequest(models.Model):
             self.save()
             return True
         return False
-
-
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    """Create a UserProfile when a User is created"""
-    if created:
-        UserProfile.objects.create(user=instance)
-
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    """Save the UserProfile when the User is saved"""
-    instance.profile.save()
